@@ -1,0 +1,9 @@
+node_modules
+dist
+server/hydrocontrol_db.json
+.git
+.vscode
+.gitignore
+Dockerfile
+.dockerignore
+README.md

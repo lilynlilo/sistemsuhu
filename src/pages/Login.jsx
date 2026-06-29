@@ -1,25 +1,31 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Leaf, Eye, EyeOff, Lock, User, AlertCircle } from 'lucide-react';
+import { Leaf, Eye, EyeOff, Lock, Mail, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 
 export default function Login() {
-  const [form, setForm]       = useState({ username: '', password: '' });
+  const [form, setForm]         = useState({ email: '', password: '' });
   const [showPass, setShowPass] = useState(false);
-  const [error, setError]     = useState('');
-  const [loading, setLoading] = useState(false);
-  const { login }             = useAuth();
+  const [error, setError]       = useState('');
+  const [loading, setLoading]   = useState(false);
+  const { login, isAuthenticated, loading: authLoading } = useAuth();
   const { isDark, toggleTheme } = useTheme();
-  const navigate              = useNavigate();
+  const navigate                = useNavigate();
+
+  // Redirect jika sudah login
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, authLoading, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-    await new Promise(r => setTimeout(r, 600)); // simulasi network
-    const result = login(form.username, form.password);
+    const result = await login(form.email, form.password);
     setLoading(false);
     if (result.success) {
       navigate('/dashboard', { replace: true });
@@ -72,13 +78,12 @@ export default function Login() {
         transition={{ duration: 0.5, ease: 'easeOut' }}
         className="relative z-10 w-full max-w-md mx-4"
       >
-        {/* Card */}
         <div
           className="rounded-3xl border p-8"
           style={{
-            background:   'var(--bg-card)',
-            borderColor:  'var(--border-color)',
-            boxShadow:    '0 25px 50px -12px rgba(0,0,0,0.15)',
+            background:  'var(--bg-card)',
+            borderColor: 'var(--border-color)',
+            boxShadow:   '0 25px 50px -12px rgba(0,0,0,0.15)',
           }}
         >
           {/* Logo */}
@@ -114,26 +119,26 @@ export default function Login() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Username */}
+            {/* Email */}
             <div>
               <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-                Username
+                Email
               </label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-muted)' }} />
                 <input
-                  id="login-username"
-                  type="text"
-                  autoComplete="username"
-                  value={form.username}
-                  onChange={e => setForm(p => ({ ...p, username: e.target.value }))}
-                  placeholder="Masukkan username"
+                  id="login-email"
+                  type="email"
+                  autoComplete="email"
+                  value={form.email}
+                  onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
+                  placeholder="Masukkan email"
                   required
                   className="w-full pl-10 pr-4 py-3 rounded-xl border text-sm outline-none transition-all"
                   style={{
-                    background:   'var(--bg-secondary)',
-                    borderColor:  'var(--border-color)',
-                    color:        'var(--text-primary)',
+                    background:  'var(--bg-secondary)',
+                    borderColor: 'var(--border-color)',
+                    color:       'var(--text-primary)',
                   }}
                   onFocus={e => e.target.style.borderColor = 'var(--accent)'}
                   onBlur={e  => e.target.style.borderColor = 'var(--border-color)'}
@@ -158,9 +163,9 @@ export default function Login() {
                   required
                   className="w-full pl-10 pr-10 py-3 rounded-xl border text-sm outline-none transition-all"
                   style={{
-                    background:   'var(--bg-secondary)',
-                    borderColor:  'var(--border-color)',
-                    color:        'var(--text-primary)',
+                    background:  'var(--bg-secondary)',
+                    borderColor: 'var(--border-color)',
+                    color:       'var(--text-primary)',
                   }}
                   onFocus={e => e.target.style.borderColor = 'var(--accent)'}
                   onBlur={e  => e.target.style.borderColor = 'var(--border-color)'}
@@ -200,11 +205,6 @@ export default function Login() {
               ) : 'Masuk'}
             </motion.button>
           </form>
-
-          {/* Hint */}
-          <p className="text-center text-xs mt-4" style={{ color: 'var(--text-muted)' }}>
-            Demo: <span className="font-mono">admin</span> / <span className="font-mono">hydro2024</span>
-          </p>
         </div>
 
         {/* Footer */}

@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { connectSSE, fetchRecent, sendControl } from '../services/mqttService';
+import { supabase } from '../lib/supabaseClient';
+import { fetchRecent, sendControl } from '../services/mqttService';
 
 const SensorContext = createContext(null);
 
@@ -8,10 +9,10 @@ const DEFAULT_THRESHOLD = {
   waterMax: 28,
   envMin: 25,
   envMax: 35,
-  min: 22, // compatibility fallback
-  max: 28  // compatibility fallback
+  min: 22,
+  max: 28
 };
-const CHART_MAX_POINTS  = 50;
+const CHART_MAX_POINTS = 50;
 
 export function SensorProvider({ children }) {
   const [threshold, setThreshold] = useState(() => {
@@ -22,106 +23,97 @@ export function SensorProvider({ children }) {
         return {
           waterMin: parsed.waterMin !== undefined ? parsed.waterMin : (parsed.min !== undefined ? parsed.min : 22),
           waterMax: parsed.waterMax !== undefined ? parsed.waterMax : (parsed.max !== undefined ? parsed.max : 28),
-          envMin: parsed.envMin !== undefined ? parsed.envMin : 25,
-          envMax: parsed.envMax !== undefined ? parsed.envMax : 35,
-          min: parsed.waterMin !== undefined ? parsed.waterMin : (parsed.min !== undefined ? parsed.min : 22),
-          max: parsed.waterMax !== undefined ? parsed.waterMax : (parsed.max !== undefined ? parsed.max : 28),
+          envMin:   parsed.envMin !== undefined ? parsed.envMin : 25,
+          envMax:   parsed.envMax !== undefined ? parsed.envMax : 35,
+          min:      parsed.waterMin !== undefined ? parsed.waterMin : (parsed.min !== undefined ? parsed.min : 22),
+          max:      parsed.waterMax !== undefined ? parsed.waterMax : (parsed.max !== undefined ? parsed.max : 28),
         };
-      } catch (e) {
+      } catch {
         return DEFAULT_THRESHOLD;
       }
     }
     return DEFAULT_THRESHOLD;
   });
 
-  const [latest, setLatest]         = useState(null);
-  const [chartData, setChartData]   = useState([]);
-  const [isLoading, setIsLoading]   = useState(true);
-  const [mqttStatus, setMqttStatus] = useState('connecting'); // 'connecting' | 'connected' | 'error'
+  const [latest,         setLatest]         = useState(null);
+  const [chartData,      setChartData]      = useState([]);
+  const [isLoading,      setIsLoading]      = useState(true);
+  const [realtimeStatus, setRealtimeStatus] = useState('connecting');
 
-  // ─── Koneksi SSE ke backend ──────────────────────────────────
   useEffect(() => {
-    // Muat data chart awal dari database (50 pembacaan terakhir)
+    // Muat 50 data terakhir dari database sebagai data awal
     fetchRecent(50)
       .then((readings) => {
         if (readings && readings.length > 0) {
           const mapped = readings.map((r) => ({
             time: new Date(r.timestamp).toLocaleTimeString('id-ID', {
-              hour: '2-digit',
-              minute: '2-digit',
-              second: '2-digit',
+              hour: '2-digit', minute: '2-digit', second: '2-digit',
             }),
             waterTemp: r.water_temp,
-            envTemp: r.env_temp,
+            envTemp:   r.env_temp,
           }));
           setChartData(mapped);
 
-          // Set data terbaru dari database
           const last = readings[readings.length - 1];
           setLatest({
             timestamp: last.timestamp,
             waterTemp: last.water_temp,
-            envTemp: last.env_temp,
-            peltierOn: last.peltier_on === 1,
+            envTemp:   last.env_temp,
+            peltierOn: !!last.peltier_on,
           });
         }
         setIsLoading(false);
       })
       .catch((err) => {
         console.warn('Gagal memuat data awal:', err);
-        setLatest({
-          timestamp: new Date().toISOString(),
-          waterTemp: 0,
-          envTemp: 0,
-          peltierOn: false,
-        });
+        setLatest({ timestamp: new Date().toISOString(), waterTemp: 0, envTemp: 0, peltierOn: false });
         setIsLoading(false);
       });
 
-    // Buka koneksi SSE untuk data real-time
-    const sse = connectSSE(
-      (data) => {
-        // Data baru dari MQTT via SSE
-        const reading = {
-          timestamp: data.timestamp || new Date().toISOString(),
-          waterTemp: data.waterTemp !== undefined ? parseFloat(data.waterTemp) : 0,
-          envTemp: data.envTemp !== undefined ? parseFloat(data.envTemp) : 0,
-          peltierOn: data.peltierOn === true,
-        };
+    // Subscribe ke INSERT baru di tabel sensor_readings via Supabase Realtime
+    const channel = supabase
+      .channel('sensor-live')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'sensor_readings' },
+        (payload) => {
+          const r = payload.new;
+          const reading = {
+            timestamp: r.timestamp,
+            waterTemp: parseFloat(r.water_temp),
+            envTemp:   parseFloat(r.env_temp),
+            peltierOn: !!r.peltier_on,
+          };
 
-        setLatest(reading);
-        setIsLoading(false);
-        setMqttStatus('connected');
+          setLatest(reading);
+          setIsLoading(false);
+          setRealtimeStatus('connected');
 
-        setChartData((prev) => {
-          const next = [
-            ...prev,
-            {
-              time: new Date().toLocaleTimeString('id-ID', {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-              }),
-              waterTemp: reading.waterTemp,
-              envTemp: reading.envTemp,
-            },
-          ];
-          return next.length > CHART_MAX_POINTS ? next.slice(-CHART_MAX_POINTS) : next;
-        });
-      },
-      (err) => {
-        console.error('SSE Error:', err);
-        setMqttStatus('error');
-      },
-      // Callback untuk status MQTT dari server
-      (status) => {
-        console.log('📡 MQTT Status update:', status);
-        setMqttStatus(status);
-      }
-    );
+          setChartData((prev) => {
+            const next = [
+              ...prev,
+              {
+                time: new Date(r.timestamp).toLocaleTimeString('id-ID', {
+                  hour: '2-digit', minute: '2-digit', second: '2-digit',
+                }),
+                waterTemp: reading.waterTemp,
+                envTemp:   reading.envTemp,
+              },
+            ];
+            return next.length > CHART_MAX_POINTS ? next.slice(-CHART_MAX_POINTS) : next;
+          });
+        }
+      )
+      .subscribe((status) => {
+        console.log('Supabase Realtime status:', status);
+        if (status === 'SUBSCRIBED')    setRealtimeStatus('connected');
+        if (status === 'CHANNEL_ERROR') setRealtimeStatus('error');
+        if (status === 'TIMED_OUT')     setRealtimeStatus('error');
+        if (status === 'CLOSED')        setRealtimeStatus('error');
+      });
 
     return () => {
-      if (sse) sse.close();
+      supabase.removeChannel(channel);
     };
   }, []);
 
@@ -131,7 +123,7 @@ export function SensorProvider({ children }) {
     localStorage.setItem('hydrocontrol-threshold', JSON.stringify(newThreshold));
   }, []);
 
-  // ─── Kontrol Peltier ──────────────────────────────────────
+  // ─── Kontrol Peltier ─────────────────────────────────────
   const controlPeltier = useCallback(async (command) => {
     try {
       const result = await sendControl(command);
@@ -143,7 +135,7 @@ export function SensorProvider({ children }) {
     }
   }, []);
 
-  // ─── Status suhu ──────────────────────────────────────────
+  // ─── Status suhu ─────────────────────────────────────────
   const getWaterStatus = useCallback(() => {
     if (!latest) return 'normal';
     if (latest.waterTemp > threshold.waterMax) return 'high';
@@ -164,7 +156,7 @@ export function SensorProvider({ children }) {
         chartData,
         threshold,
         isLoading,
-        mqttStatus,
+        mqttStatus: realtimeStatus, // alias agar komponen lain tidak perlu diubah
         updateThreshold,
         controlPeltier,
         getWaterStatus,

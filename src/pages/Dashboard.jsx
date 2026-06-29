@@ -18,9 +18,9 @@ function StatBadge({ label, value, color }) {
 
 function MqttStatusBadge({ status }) {
   const configs = {
-    connected:  { color: '#22c55e', bg: 'rgba(34,197,94,0.1)',  label: 'MQTT Terhubung', icon: Wifi },
+    connected: { color: '#22c55e', bg: 'rgba(34,197,94,0.1)', label: 'Realtime Terhubung', icon: Wifi },
     connecting: { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', label: 'Menghubungkan...', icon: Wifi },
-    error:      { color: '#ef4444', bg: 'rgba(239,68,68,0.1)',  label: 'MQTT Terputus', icon: WifiOff },
+    error: { color: '#ef4444', bg: 'rgba(239,68,68,0.1)', label: 'Realtime Terputus', icon: WifiOff },
   };
   const cfg = configs[status] || configs.connecting;
   const Icon = cfg.icon;
@@ -86,7 +86,7 @@ export default function Dashboard() {
         <div className="flex items-center gap-3">
           <Activity className="w-5 h-5" style={{ color: 'var(--accent)' }} />
           <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
-            Data real-time dari Arduino via MQTT
+            Data real-time dari Arduino via Supabase
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -142,7 +142,7 @@ export default function Dashboard() {
                 Kontrol Manual Peltier
               </h2>
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                Kirim perintah ON/OFF langsung ke Arduino via MQTT
+                Kirim perintah ON/OFF peltier
               </p>
             </div>
           </div>
@@ -192,7 +192,7 @@ export default function Dashboard() {
         </div>
 
         <p className="text-xs mt-3" style={{ color: 'var(--text-muted)' }}>
-          Kontrol otomatis tetap berjalan di Arduino (Peltier ON jika suhu air {'>'} 30°C). Perintah manual dapat di-override oleh sistem otomatis.
+          Kontrol otomatis tetap berjalan (Peltier ON jika suhu air {'>'} 29°C).
         </p>
       </motion.div>
 
@@ -208,10 +208,10 @@ export default function Dashboard() {
           Statistik Sesi (50 Pembacaan Terakhir)
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <StatBadge label="Rata-rata Air" value={`${avgWater}°C`} color="var(--accent)" />
-          <StatBadge label="Rata-rata Lingk" value={`${avgEnv}°C`} color="#3b44f6ff" />
-          <StatBadge label="Maks Air" value={`${maxWater}°C`} color="#3b44f6ff" />
-          <StatBadge label="Min Air" value={`${minWater}°C`} color="#22c55e" />
+          <StatBadge label="Rerata suhu Air" value={`${avgWater}°C`} color="var(--accent)" />
+          <StatBadge label="Rerata suhu GH" value={`${avgEnv}°C`} color="#3b44f6ff" />
+          <StatBadge label="Maks suhu Air" value={`${maxWater}°C`} color="#3b44f6ff" />
+          <StatBadge label="Minim suhu Air" value={`${minWater}°C`} color="#22c55e" />
         </div>
       </motion.div>
 

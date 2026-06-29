@@ -38,15 +38,7 @@ export default function Header() {
 
       {/* ── Right Actions ── */}
       <div className="flex items-center gap-3">
-        {/* Notif (kosmetik) */}
-        <button
-          className="relative w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:opacity-80"
-          style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}
-          title="Notifikasi"
-        >
-          <Bell className="w-4.5 h-4.5 w-4 h-4" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500" />
-        </button>
+
 
         {/* Theme Toggle */}
         <motion.button
@@ -85,7 +77,7 @@ export default function Header() {
                 <p className="text-sm font-medium leading-tight" style={{ color: 'var(--text-primary)' }}>
                   {user?.username}
                 </p>
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Administrator</p>
+                <p className="text-xs" style={{ color: isDark ? 'white' : 'var(--text-muted)' }}>admin</p>
               </div>
             </div>
 

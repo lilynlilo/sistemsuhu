@@ -49,7 +49,7 @@ export default function History() {
             time: `${hrStr}:${minStr}:${secStr}`,
             waterTemp: row.water_temp,
             envTemp: row.env_temp,
-            peltierOn: row.peltier_on === 1,
+            peltierOn: !!row.peltier_on,
           };
         });
 
@@ -157,7 +157,7 @@ export default function History() {
         <div className="ml-auto flex items-center gap-2">
           <span className="flex items-center gap-1.5 text-xs px-2 py-1 rounded-full" style={{ background: 'rgba(59,130,246,0.1)', color: '#3b82f6' }}>
             <Database className="w-3 h-3" />
-            SQLite
+            Supabase
           </span>
 
           <button

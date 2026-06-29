@@ -49,7 +49,7 @@ export default function PeltierStatus({ isOn = false }) {
           <motion.div
             key={String(isOn)}
             initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1,   opacity: 1 }}
+            animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.25 }}
             className="flex items-center gap-2 mb-1"
           >
@@ -75,7 +75,7 @@ export default function PeltierStatus({ isOn = false }) {
           </motion.div>
 
           <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-            {isOn ? 'Pendinginan sedang aktif' : 'Sistem pendingin standby'}
+            {isOn ? 'Pendinginan/Peltier sedang aktif' : 'Sistem pendingin/Peltier mati'}
           </p>
         </div>
       </div>

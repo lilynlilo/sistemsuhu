@@ -1,76 +1,53 @@
+require('dotenv').config();
+
 // ─── HydroControl Backend Server ──────────────────────────────
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const db = require('./db');
-const mqttClient = require('./mqtt-client');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// ─── Middleware ───────────────────────────────────────────────
 app.use(cors());
 app.use(express.json());
 
-// ─── Inisialisasi Database ───────────────────────────────────
 db.initDatabase();
-const insert = db.insertReading();
-
-// ─── Throttle: simpan ke database maksimal setiap 10 detik ───
-let lastSaveTime = 0;
-const SAVE_INTERVAL = 10000; // 10 detik
-
-// ─── Koneksi MQTT ────────────────────────────────────────────
-mqttClient.connectMQTT((data) => {
-  const now = Date.now();
-  if (now - lastSaveTime >= SAVE_INTERVAL) {
-    lastSaveTime = now;
-    try {
-      insert(data.waterTemp, data.envTemp, data.peltierOn);
-    } catch (err) {
-      console.error('X Gagal simpan ke database:', err.message);
-    }
-  }
-});
 
 // ═══════════════════════════════════════════════════════════════
 // REST API ENDPOINTS
 // ═══════════════════════════════════════════════════════════════
 
 // ─── Health Check ────────────────────────────────────────────
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    mqtt: mqttClient.isConnected() ? 'connected' : 'disconnected',
-    database: 'sqlite',
-    totalReadings: db.getTotalCount().count,
-    uptime: process.uptime(),
-  });
-});
-
-// ─── Data Sensor Terbaru ─────────────────────────────────────
-app.get('/api/latest', (req, res) => {
+app.get('/api/health', async (req, res) => {
   try {
-    // Prioritaskan data live dari MQTT
-    const liveData = mqttClient.getLatestData();
-
-    // Juga ambil dari database sebagai fallback
-    const dbData = db.getLatest();
-
+    const { count } = await db.getTotalCount();
     res.json({
-      live: liveData,
-      stored: dbData || null,
-      mqttConnected: mqttClient.isConnected(),
+      status: 'ok',
+      database: 'supabase',
+      totalReadings: count,
+      uptime: process.uptime(),
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
+// ─── Data Sensor Terbaru ─────────────────────────────────────
+app.get('/api/latest', async (req, res) => {
+  try {
+    const dbData = await db.getLatest();
+    res.json({ stored: dbData || null });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── Data Realtime (50 pembacaan terakhir untuk chart) ───────
-app.get('/api/recent', (req, res) => {
+app.get('/api/recent', async (req, res) => {
   try {
     const count = parseInt(req.query.count) || 50;
-    const readings = db.getRecentReadings(Math.min(count, 200));
+    const readings = await db.getRecentReadings(Math.min(count, 200));
     res.json(readings);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -78,7 +55,7 @@ app.get('/api/recent', (req, res) => {
 });
 
 // ─── Data History berdasarkan Tanggal ────────────────────────
-app.get('/api/history', (req, res) => {
+app.get('/api/history', async (req, res) => {
   try {
     const { start, end } = req.query;
 
@@ -89,107 +66,64 @@ app.get('/api/history', (req, res) => {
     const startDate = `${start} 00:00:00`;
     const endDate = end ? `${end} 23:59:59` : `${start} 23:59:59`;
 
-    const history = db.getHistory(startDate, endDate);
-    const stats = db.getStats(startDate, endDate);
+    const [history, stats] = await Promise.all([
+      db.getHistory(startDate, endDate),
+      db.getStats(startDate, endDate),
+    ]);
 
-    res.json({
-      data: history,
-      stats: stats,
-      range: { start: startDate, end: endDate },
-    });
+    res.json({ data: history, stats, range: { start: startDate, end: endDate } });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
 // ─── Statistik ───────────────────────────────────────────────
-app.get('/api/stats', (req, res) => {
+app.get('/api/stats', async (req, res) => {
   try {
     const { start, end } = req.query;
-
     const now = new Date();
     const startDate = start || now.toISOString().split('T')[0];
     const endDate = end || startDate;
-
-    const stats = db.getStats(`${startDate} 00:00:00`, `${endDate} 23:59:59`);
+    const stats = await db.getStats(`${startDate} 00:00:00`, `${endDate} 23:59:59`);
     res.json(stats);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// ─── Kontrol Peltier (ON/OFF) ────────────────────────────────
-app.post('/api/control', (req, res) => {
+// ─── Kontrol Peltier — tulis perintah ke Supabase ────────────
+app.post('/api/control', async (req, res) => {
   try {
     const { command } = req.body;
 
     if (!command) {
-      return res.status(400).json({ error: 'Parameter "command" wajib diisi (ON/OFF/1/0)' });
+      return res.status(400).json({ error: 'Parameter "command" wajib diisi (ON/OFF)' });
     }
 
-    const validCommands = ['ON', 'OFF', '1', '0'];
     const cmd = command.toString().toUpperCase();
+    const normalizedCmd = cmd === '1' ? 'ON' : cmd === '0' ? 'OFF' : cmd;
 
-    if (!validCommands.includes(cmd)) {
-      return res.status(400).json({ error: 'Command tidak valid. Gunakan: ON, OFF, 1, atau 0' });
+    if (!['ON', 'OFF'].includes(normalizedCmd)) {
+      return res.status(400).json({ error: 'Command tidak valid. Gunakan: ON atau OFF' });
     }
 
-    const success = mqttClient.publishControl(cmd);
-
-    if (success) {
-      res.json({
-        status: 'ok',
-        message: `Perintah "${cmd}" dikirim ke Arduino`,
-        command: cmd,
-      });
-    } else {
-      res.status(503).json({
-        error: 'MQTT tidak terhubung. Perintah tidak dapat dikirim.',
-      });
-    }
+    const result = await db.insertCommand(normalizedCmd);
+    res.json({
+      status: 'ok',
+      message: `Perintah "${normalizedCmd}" dikirim ke Arduino`,
+      command: normalizedCmd,
+      id: result.id,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// ─── SSE (Server-Sent Events) untuk Data Real-time ───────────
-app.get('/api/sse', (req, res) => {
-  // Set header untuk SSE
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  res.setHeader('X-Accel-Buffering', 'no'); // Untuk Nginx
-
-  // Kirim comment untuk menjaga koneksi
-  res.write(':ok\n\n');
-
-  // Register client ke MQTT module
-  mqttClient.addSSEClient(res);
-
-  // Heartbeat setiap 30 detik agar koneksi tidak timeout
-  const heartbeat = setInterval(() => {
-    try {
-      res.write(':heartbeat\n\n');
-    } catch {
-      clearInterval(heartbeat);
-    }
-  }, 30000);
-
-  req.on('close', () => {
-    clearInterval(heartbeat);
-  });
-});
-
-const path = require('path');
-
 // ─── Serve Static Files in Production ────────────────────────
 app.use(express.static(path.join(__dirname, '../dist')));
 
-// Fallback all other routes to index.html for Single Page Application
-app.get('*', (req, res, next) => {
-  if (req.path.startsWith('/api')) {
-    return next();
-  }
+app.get('*all', (req, res, next) => {
+  if (req.path.startsWith('/api')) return next();
   res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
@@ -199,14 +133,13 @@ app.get('*', (req, res, next) => {
 app.listen(PORT, () => {
   console.log('');
   console.log('═══════════════════════════════════════════════');
-  console.log('  🌿 HydroControl Backend Server');
+  console.log('  HydroControl Backend Server');
   console.log('═══════════════════════════════════════════════');
-  console.log(`  🚀 Server    : http://localhost:${PORT}`);
-  console.log(`  📡 SSE       : http://localhost:${PORT}/api/sse`);
-  console.log(`  📊 API       : http://localhost:${PORT}/api/latest`);
-  console.log(`  📅 History   : http://localhost:${PORT}/api/history?start=YYYY-MM-DD`);
-  console.log(`  🎮 Control   : POST http://localhost:${PORT}/api/control`);
-  console.log(`  ❤️  Health    : http://localhost:${PORT}/api/health`);
+  console.log(`  Server  : http://localhost:${PORT}`);
+  console.log(`  API     : http://localhost:${PORT}/api/latest`);
+  console.log(`  History : http://localhost:${PORT}/api/history?start=YYYY-MM-DD`);
+  console.log(`  Control : POST http://localhost:${PORT}/api/control`);
+  console.log(`  Health  : http://localhost:${PORT}/api/health`);
   console.log('═══════════════════════════════════════════════');
   console.log('');
 });

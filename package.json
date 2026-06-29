@@ -19,11 +19,12 @@
     "vite": "^8.0.4"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.106.2",
     "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
     "express": "^5.1.0",
     "framer-motion": "^12.38.0",
     "lucide-react": "^1.8.0",
-    "mqtt": "^5.12.1",
     "react-datepicker": "^9.1.0",
     "react-router-dom": "^7.14.0",
     "recharts": "^3.8.1"

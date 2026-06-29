@@ -2,9 +2,10 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 export default function ProtectedRoute({ children }) {
-  const { isAuthenticated } = useAuth();
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
+  const { isAuthenticated, loading } = useAuth();
+
+  // Tunggu hingga Supabase selesai cek sesi sebelum redirect
+  if (loading) return null;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
   return children;
 }
