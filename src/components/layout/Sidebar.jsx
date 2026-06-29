@@ -28,7 +28,7 @@ export default function Sidebar() {
     <motion.aside
       animate={{ width: collapsed ? 72 : 240 }}
       transition={{ duration: 0.3, ease: 'easeInOut' }}
-      className="relative flex flex-col h-screen shrink-0 overflow-hidden border-r z-20"
+      className="relative hidden md:flex flex-col h-screen shrink-0 overflow-hidden border-r z-20"
       style={{
         background:   'var(--sidebar-bg)',
         borderColor:  'var(--border-color)',

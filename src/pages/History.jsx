@@ -97,15 +97,15 @@ export default function History() {
   return (
     <div className="space-y-6">
       {/* ── Header Controls ── */}
-      <div className="card p-5 flex flex-wrap items-center gap-4" style={{ overflow: 'visible', position: 'relative', zIndex: 50 }}>
+      <div className="card p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center gap-4" style={{ overflow: 'visible', position: 'relative', zIndex: 50 }}>
         <div className="flex items-center gap-2">
-          <CalendarDays className="w-5 h-5" style={{ color: 'var(--accent)' }} />
-          <span className="font-medium text-sm" style={{ color: 'var(--text-secondary)' }}>
+          <CalendarDays className="w-5 h-5 shrink-0" style={{ color: 'var(--accent)' }} />
+          <span className="font-medium text-sm whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>
             Pilih Tanggal:
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 hide-scrollbar">
           <div className="relative">
             <DatePicker
               id="start-date"
@@ -117,9 +117,9 @@ export default function History() {
               selectsStart
               startDate={startDate}
               endDate={endDate}
-              dateFormat="dd MMM yyyy"
+              dateFormat="dd MMM yy"
               maxDate={new Date()}
-              className="w-32 sm:w-36 px-3 py-2.5 rounded-xl border text-sm font-medium outline-none cursor-pointer text-center"
+              className="w-28 sm:w-36 px-3 py-2.5 rounded-xl border text-sm font-medium outline-none cursor-pointer text-center"
               style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
               calendarClassName="history-calendar"
               showMonthDropdown
@@ -142,8 +142,8 @@ export default function History() {
               endDate={endDate}
               minDate={startDate || undefined}
               maxDate={new Date()}
-              dateFormat="dd MMM yyyy"
-              className="w-32 sm:w-36 px-3 py-2.5 rounded-xl border text-sm font-medium outline-none cursor-pointer text-center"
+              dateFormat="dd MMM yy"
+              className="w-28 sm:w-36 px-3 py-2.5 rounded-xl border text-sm font-medium outline-none cursor-pointer text-center"
               style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
               calendarClassName="history-calendar"
               showMonthDropdown
@@ -154,8 +154,8 @@ export default function History() {
           </div>
         </div>
 
-        <div className="ml-auto flex items-center gap-2">
-          <span className="flex items-center gap-1.5 text-xs px-2 py-1 rounded-full" style={{ background: 'rgba(59,130,246,0.1)', color: '#3b82f6' }}>
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto md:ml-auto">
+          <span className="hidden sm:flex items-center gap-1.5 text-xs px-2 py-1 rounded-full" style={{ background: 'rgba(59,130,246,0.1)', color: '#3b82f6' }}>
             <Database className="w-3 h-3" />
             Supabase
           </span>

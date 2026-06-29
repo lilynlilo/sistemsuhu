@@ -20,7 +20,7 @@ export default function Header() {
 
   return (
     <header
-      className="sticky top-0 z-10 px-6 py-4 flex items-center justify-between border-b backdrop-blur-sm"
+      className="sticky top-0 z-10 px-4 md:px-6 py-3 md:py-4 flex items-center justify-between border-b backdrop-blur-sm"
       style={{
         background:   'var(--header-bg)',
         borderColor:  'var(--border-color)',
@@ -28,10 +28,10 @@ export default function Header() {
     >
       {/* ── Page Title ── */}
       <div>
-        <h1 className="font-bold text-lg leading-tight" style={{ color: 'var(--text-primary)' }}>
+        <h1 className="font-bold text-base md:text-lg leading-tight" style={{ color: 'var(--text-primary)' }}>
           {pageInfo.title}
         </h1>
-        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-[10px] md:text-xs hidden sm:block" style={{ color: 'var(--text-muted)' }}>
           {pageInfo.subtitle}
         </p>
       </div>

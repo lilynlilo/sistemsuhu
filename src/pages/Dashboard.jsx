@@ -101,7 +101,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── Sensor Cards ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <SensorCard
           type="water"
           label="Suhu Air Hidroponik"
@@ -124,7 +124,7 @@ export default function Dashboard() {
 
       {/* ── Kontrol Peltier Manual ── */}
       <motion.div
-        className="card p-5"
+        className="card p-4 sm:p-5"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.15 }}
@@ -141,13 +141,13 @@ export default function Dashboard() {
               <h2 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
                 Kontrol Manual Peltier
               </h2>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              <p className="text-xs hidden sm:block" style={{ color: 'var(--text-muted)' }}>
                 Kirim perintah ON/OFF peltier
               </p>
             </div>
           </div>
           <span
-            className="text-xs px-2.5 py-1 rounded-full font-semibold"
+            className="text-xs px-2.5 py-1 rounded-full font-semibold shrink-0"
             style={{
               background: latest?.peltierOn ? 'rgba(239,68,68,0.1)' : 'rgba(148,163,184,0.1)',
               color: latest?.peltierOn ? '#ef4444' : 'var(--text-muted)',
@@ -157,7 +157,7 @@ export default function Dashboard() {
           </span>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}

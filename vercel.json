@@ -1,0 +1,14 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": "vite",
+  "rewrites": [
+    { "source": "/api/health", "destination": "/api/health" },
+    { "source": "/api/latest", "destination": "/api/latest" },
+    { "source": "/api/recent", "destination": "/api/recent" },
+    { "source": "/api/history", "destination": "/api/history" },
+    { "source": "/api/stats", "destination": "/api/stats" },
+    { "source": "/api/control", "destination": "/api/control" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

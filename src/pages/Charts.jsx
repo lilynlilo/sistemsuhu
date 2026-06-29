@@ -70,19 +70,19 @@ export default function Charts() {
   return (
     <div className="space-y-6">
       {/* ── Date Picker & Mode Toggle ── */}
-      <div className="card p-5 flex flex-wrap items-center gap-4" style={{ overflow: 'visible', position: 'relative', zIndex: 50 }}>
+      <div className="card p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center gap-4" style={{ overflow: 'visible', position: 'relative', zIndex: 50 }}>
         <div className="flex items-center gap-2">
-          <CalendarDays className="w-5 h-5" style={{ color: 'var(--accent)' }} />
-          <span className="font-medium text-sm" style={{ color: 'var(--text-secondary)' }}>
+          <CalendarDays className="w-5 h-5 shrink-0" style={{ color: 'var(--accent)' }} />
+          <span className="font-medium text-sm whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>
             Mode Grafik:
           </span>
         </div>
 
         {/* Mode Toggle Buttons */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full md:w-auto">
           <button
             onClick={() => setMode('live')}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all"
+            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all"
             style={{
               background: isLive ? 'var(--accent)' : 'var(--bg-secondary)',
               color: isLive ? '#fff' : 'var(--text-secondary)',
@@ -92,19 +92,19 @@ export default function Charts() {
           </button>
           <button
             onClick={() => setMode('history')}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all"
+            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all"
             style={{
               background: !isLive ? 'var(--accent)' : 'var(--bg-secondary)',
               color: !isLive ? '#fff' : 'var(--text-secondary)',
             }}
           >
-            <CalendarDays className="w-4 h-4" /> Pilih Tanggal
+            <CalendarDays className="w-4 h-4" /> History
           </button>
         </div>
 
         {/* Date Pickers (shown only in history mode) */}
         {!isLive && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 hide-scrollbar">
             <div className="relative">
               <DatePicker
                 id="chart-start-date"
@@ -116,9 +116,9 @@ export default function Charts() {
                 selectsStart
                 startDate={startDate}
                 endDate={endDate}
-                dateFormat="dd MMM yyyy"
+                dateFormat="dd MMM yy"
                 maxDate={new Date()}
-                className="w-32 sm:w-36 px-3 py-2.5 rounded-xl border text-sm font-medium outline-none cursor-pointer text-center"
+                className="w-28 sm:w-36 px-3 py-2.5 rounded-xl border text-sm font-medium outline-none cursor-pointer text-center"
                 style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
                 calendarClassName="history-calendar"
                 showMonthDropdown
@@ -141,8 +141,8 @@ export default function Charts() {
                 endDate={endDate}
                 minDate={startDate || undefined}
                 maxDate={new Date()}
-                dateFormat="dd MMM yyyy"
-                className="w-32 sm:w-36 px-3 py-2.5 rounded-xl border text-sm font-medium outline-none cursor-pointer text-center"
+                dateFormat="dd MMM yy"
+                className="w-28 sm:w-36 px-3 py-2.5 rounded-xl border text-sm font-medium outline-none cursor-pointer text-center"
                 style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
                 calendarClassName="history-calendar"
                 showMonthDropdown
@@ -155,7 +155,7 @@ export default function Charts() {
         )}
 
         {/* Status badge */}
-        <div className="ml-auto">
+        <div className="md:ml-auto w-full md:w-auto flex justify-end">
           {isLive ? (
             <span
               className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium"
