@@ -8,7 +8,6 @@
     { "source": "/api/recent", "destination": "/api/recent" },
     { "source": "/api/history", "destination": "/api/history" },
     { "source": "/api/stats", "destination": "/api/stats" },
-    { "source": "/api/control", "destination": "/api/control" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/api/control", "destination": "/api/control" }
   ]
 }
