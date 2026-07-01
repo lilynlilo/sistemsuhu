@@ -16,20 +16,7 @@ function StatBadge({ label, value, color }) {
   );
 }
 
-function DeviceBadge({ isOnline }) {
-  return (
-    <span
-      className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium"
-      style={{
-        background: isOnline ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
-        color: isOnline ? '#22c55e' : '#ef4444',
-      }}
-    >
-      <Cpu className="w-3 h-3" />
-      Perangkat: {isOnline ? 'Online' : 'Offline'}
-    </span>
-  );
-}
+
 
 function ConnectionBadge({ status }) {
   const configs = {
@@ -64,12 +51,7 @@ export default function Dashboard() {
   const waterStatus = getWaterStatus();
   const envStatus = getEnvStatus();
 
-  // Cek apakah perangkat (Arduino) online — ada data terbaru dalam 30 detik terakhir
-  const deviceOnline = (() => {
-    if (!latest?.timestamp) return false;
-    const lastTime = new Date(latest.timestamp).getTime();
-    return (now.getTime() - lastTime) < 30000; // 30 detik
-  })();
+
 
   // Hitung statistik dari chartData
   const waterTemps = chartData.map(d => d.waterTemp).filter(Boolean);
@@ -106,7 +88,6 @@ export default function Dashboard() {
       {/* ── Top Bar ── */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
-          <DeviceBadge isOnline={deviceOnline} />
           <ConnectionBadge status={mqttStatus} />
         </div>
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: 'var(--bg-secondary)' }}>
