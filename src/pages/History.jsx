@@ -2,9 +2,8 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { CalendarDays, TableProperties, BarChart2, Download, Database } from 'lucide-react';
+import { CalendarDays, Download, Filter } from 'lucide-react';
 import { fetchHistory } from '../services/mqttService';
-import TemperatureChart from '../components/charts/TemperatureChart';
 
 function formatDate(date) {
   const y = date.getFullYear();
@@ -13,14 +12,59 @@ function formatDate(date) {
   return `${y}-${m}-${d}`;
 }
 
+function getAggregatedData(data, aggType) {
+  if (aggType === 'realtime') return data;
+  if (!data || data.length === 0) return [];
+
+  const groups = {};
+
+  data.forEach(row => {
+    const d = new Date(row.timestamp);
+    let key = '';
+    
+    if (aggType === 'minute') {
+      const hr = String(d.getHours()).padStart(2, '0');
+      const min = String(d.getMinutes()).padStart(2, '0');
+      key = `${row.date} ${hr}:${min}`;
+    } else if (aggType === 'hour') {
+      const hr = String(d.getHours()).padStart(2, '0');
+      key = `${row.date} ${hr}:00`;
+    }
+
+    if (!groups[key]) {
+      groups[key] = {
+        date: row.date,
+        time: aggType === 'hour' ? `${String(d.getHours()).padStart(2, '0')}:00:00` : `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:00`,
+        count: 0,
+        waterSum: 0,
+        envSum: 0,
+        peltierOnCount: 0,
+      };
+    }
+    
+    groups[key].count++;
+    groups[key].waterSum += parseFloat(row.waterTemp) || 0;
+    groups[key].envSum += parseFloat(row.envTemp) || 0;
+    if (row.peltierOn) groups[key].peltierOnCount++;
+  });
+
+  return Object.values(groups).map(g => ({
+    date: g.date,
+    time: g.time,
+    waterTemp: (g.waterSum / g.count).toFixed(1),
+    envTemp: (g.envSum / g.count).toFixed(1),
+    peltierOn: g.peltierOnCount > 0, // dianggap ON jika dalam rentang waktu tersebut pernah ON
+  }));
+}
+
 export default function History() {
   const [dateRange, setDateRange] = useState([new Date(), new Date()]);
   const [startDate, endDate] = dateRange;
   const [historyData,  setHistoryData]  = useState([]);
   const [stats,        setStats]        = useState(null);
   const [loading,      setLoading]      = useState(false);
-  const [view,         setView]         = useState('table'); // 'table' | 'chart'
   const [error,        setError]        = useState('');
+  const [aggregation,  setAggregation]  = useState('realtime'); // 'realtime', 'minute', 'hour'
 
   useEffect(() => {
     if (!startDate) return;
@@ -66,10 +110,12 @@ export default function History() {
       });
   }, [startDate, endDate]);
 
+  const displayData = getAggregatedData(historyData, aggregation);
+
   const handleDownloadCSV = () => {
-    if (historyData.length === 0) return;
+    if (displayData.length === 0) return;
     const header = ['Tanggal', 'Jam', 'Suhu Air (°C)', 'Suhu Greenhouse (°C)', 'Status Peltier'].join(',');
-    const rows = historyData.map(row => [
+    const rows = displayData.map(row => [
       row.date,
       row.time,
       row.waterTemp,
@@ -84,15 +130,15 @@ export default function History() {
     link.href = url;
     const dateStr = startDate ? formatDate(startDate) : 'history';
     const endStr = endDate ? formatDate(endDate) : dateStr;
-    link.setAttribute('download', `history_suhu_${dateStr}_to_${endStr}.csv`);
+    link.setAttribute('download', `history_suhu_${dateStr}_to_${endStr}_${aggregation}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  const peltierOnCount  = stats?.peltier_on_count ?? historyData.filter(d => d.peltierOn).length;
-  const maxWater        = stats?.max_water_temp ?? (historyData.length ? Math.max(...historyData.map(d => d.waterTemp)).toFixed(1) : '--');
-  const maxEnv          = stats?.max_env_temp ?? (historyData.length ? Math.max(...historyData.map(d => d.envTemp)).toFixed(1) : '--');
+  const peltierOnCount  = displayData.filter(d => d.peltierOn).length;
+  const maxWater        = displayData.length ? Math.max(...displayData.map(d => parseFloat(d.waterTemp))).toFixed(1) : '--';
+  const maxEnv          = displayData.length ? Math.max(...displayData.map(d => parseFloat(d.envTemp))).toFixed(1) : '--';
 
   return (
     <div className="space-y-6">
@@ -155,45 +201,34 @@ export default function History() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2 w-full md:w-auto md:ml-auto">
-          <span className="hidden sm:flex items-center gap-1.5 text-xs px-2 py-1 rounded-full" style={{ background: 'rgba(59,130,246,0.1)', color: '#3b82f6' }}>
-            <Database className="w-3 h-3" />
-            Supabase
-          </span>
+          {/* Dropdown Agregasi */}
+          <div className="relative flex items-center px-3 py-2.5 rounded-xl border" style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border-color)' }}>
+            <Filter className="w-4 h-4 mr-2" style={{ color: 'var(--text-muted)' }} />
+            <select 
+              value={aggregation}
+              onChange={(e) => setAggregation(e.target.value)}
+              className="bg-transparent text-sm font-semibold outline-none cursor-pointer"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              <option value="realtime">Data Realtime</option>
+              <option value="minute">Rata-rata per Menit</option>
+              <option value="hour">Rata-rata per Jam</option>
+            </select>
+          </div>
 
           <button
             onClick={handleDownloadCSV}
-            disabled={historyData.length === 0}
-            className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${historyData.length === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:opacity-90 active:scale-95'}`}
+            disabled={displayData.length === 0}
+            className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${displayData.length === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:opacity-90 active:scale-95'}`}
             style={{
-              background: historyData.length === 0 ? 'var(--bg-secondary)' : 'rgba(34,197,94,0.15)',
-              color:      historyData.length === 0 ? 'var(--text-muted)' : '#22c55e',
-              border:     historyData.length === 0 ? '1px solid var(--border-color)' : '1px solid rgba(34,197,94,0.3)',
+              background: displayData.length === 0 ? 'var(--bg-secondary)' : 'rgba(34,197,94,0.15)',
+              color:      displayData.length === 0 ? 'var(--text-muted)' : '#22c55e',
+              border:     displayData.length === 0 ? '1px solid var(--border-color)' : '1px solid rgba(34,197,94,0.3)',
             }}
             title="Download CSV"
           >
             <Download className="w-4 h-4" />
             <span>Unduh CSV</span>
-          </button>
-          
-          <button
-            onClick={() => setView('table')}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all ${view === 'table' ? 'text-white' : ''}`}
-            style={{
-              background: view === 'table' ? 'var(--accent)' : 'var(--bg-secondary)',
-              color:      view === 'table' ? '#fff' : 'var(--text-secondary)',
-            }}
-          >
-            <TableProperties className="w-4 h-4" /> Tabel
-          </button>
-          <button
-            onClick={() => setView('chart')}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all ${view === 'chart' ? 'text-white' : ''}`}
-            style={{
-              background: view === 'chart' ? 'var(--accent)' : 'var(--bg-secondary)',
-              color:      view === 'chart' ? '#fff' : 'var(--text-secondary)',
-            }}
-          >
-            <BarChart2 className="w-4 h-4" /> Grafik
           </button>
         </div>
       </div>
@@ -214,7 +249,7 @@ export default function History() {
       {/* ── Summary Stats ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: 'Total Data',      value: historyData.length,       color: 'var(--accent)', unit: 'titik' },
+          { label: 'Total Data',      value: displayData.length,       color: 'var(--accent)', unit: 'baris' },
           { label: 'Maks Suhu Air',   value: maxWater,                 color: '#3b82f6',       unit: '°C'    },
           { label: 'Maks Greenhouse', value: maxEnv,                   color: '#22c55e',       unit: '°C'    },
           { label: 'Peltier ON',      value: peltierOnCount,           color: '#3b82f6',       unit: 'kali'  },
@@ -235,7 +270,7 @@ export default function History() {
         ))}
       </div>
 
-      {/* ── Content ── */}
+      {/* ── Table ── */}
       {loading ? (
         <div className="card p-12 flex items-center justify-center">
           <div className="flex flex-col items-center gap-3">
@@ -243,30 +278,18 @@ export default function History() {
             <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Memuat data history dari database...</p>
           </div>
         </div>
-      ) : view === 'chart' ? (
-        <motion.div className="card p-5" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <h3 className="font-semibold mb-4 text-sm" style={{ color: 'var(--text-primary)' }}>
-            Grafik Suhu — {startDate?.toLocaleDateString('id-ID')} {endDate && endDate.getTime() !== startDate?.getTime() ? ` s/d ${endDate.toLocaleDateString('id-ID')}` : ''}
-          </h3>
-          {historyData.length > 0 ? (
-            <TemperatureChart data={historyData} threshold={null} showEnv height={340} />
-          ) : (
-            <div className="flex items-center justify-center h-40">
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Belum ada data untuk tanggal ini</p>
-            </div>
-          )}
-        </motion.div>
       ) : (
         <motion.div className="card overflow-hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--border-color)' }}>
             <h3 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
               Data History — {startDate?.toLocaleDateString('id-ID')} {endDate && endDate.getTime() !== startDate?.getTime() ? ` s/d ${endDate.toLocaleDateString('id-ID')}` : ''}
+              {aggregation !== 'realtime' && <span className="ml-2 text-xs font-normal" style={{ color: 'var(--text-muted)' }}>({aggregation === 'minute' ? 'Rata-rata per Menit' : 'Rata-rata per Jam'})</span>}
             </h3>
             <span className="text-xs px-2.5 py-1 rounded-full" style={{ background: 'var(--bg-secondary)', color: 'var(--text-muted)' }}>
-              {historyData.length} baris
+              {displayData.length} baris
             </span>
           </div>
-          {historyData.length > 0 ? (
+          {displayData.length > 0 ? (
             <div className="overflow-x-auto max-h-[480px] overflow-y-auto">
               <table className="data-table">
                 <thead className="sticky top-0">
@@ -279,12 +302,12 @@ export default function History() {
                   </tr>
                 </thead>
                 <tbody>
-                  {historyData.map((row, i) => (
+                  {displayData.map((row, i) => (
                     <tr key={i}>
                       <td className="font-mono text-xs">{row.date}</td>
                       <td className="font-mono text-xs">{row.time}</td>
                       <td>
-                        <span className="font-semibold" style={{ color: row.waterTemp > 28 ? '#ef4444' : '#22c55e' }}>
+                        <span className="font-semibold" style={{ color: row.waterTemp > 29 ? '#ef4444' : '#22c55e' }}>
                           {row.waterTemp}
                         </span>
                       </td>

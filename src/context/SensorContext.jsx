@@ -6,11 +6,11 @@ const SensorContext = createContext(null);
 
 const DEFAULT_THRESHOLD = {
   waterMin: 22,
-  waterMax: 28,
+  waterMax: 29,
   envMin: 25,
   envMax: 35,
   min: 22,
-  max: 28
+  max: 29
 };
 const CHART_MAX_POINTS = 50;
 
@@ -22,11 +22,11 @@ export function SensorProvider({ children }) {
         const parsed = JSON.parse(saved);
         return {
           waterMin: parsed.waterMin !== undefined ? parsed.waterMin : (parsed.min !== undefined ? parsed.min : 22),
-          waterMax: parsed.waterMax !== undefined ? parsed.waterMax : (parsed.max !== undefined ? parsed.max : 28),
+          waterMax: parsed.waterMax !== undefined ? parsed.waterMax : (parsed.max !== undefined ? parsed.max : 29),
           envMin:   parsed.envMin !== undefined ? parsed.envMin : 25,
           envMax:   parsed.envMax !== undefined ? parsed.envMax : 35,
           min:      parsed.waterMin !== undefined ? parsed.waterMin : (parsed.min !== undefined ? parsed.min : 22),
-          max:      parsed.waterMax !== undefined ? parsed.waterMax : (parsed.max !== undefined ? parsed.max : 28),
+          max:      parsed.waterMax !== undefined ? parsed.waterMax : (parsed.max !== undefined ? parsed.max : 29),
         };
       } catch {
         return DEFAULT_THRESHOLD;

@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Clock, RefreshCw, Activity, Power, Wifi, WifiOff } from 'lucide-react';
+import { Clock, RefreshCw, Activity, Power, Wifi, WifiOff, Cpu } from 'lucide-react';
 import { useSensor } from '../context/SensorContext';
 import SensorCard from '../components/ui/SensorCard';
 import PeltierStatus from '../components/ui/PeltierStatus';
@@ -16,11 +16,26 @@ function StatBadge({ label, value, color }) {
   );
 }
 
-function MqttStatusBadge({ status }) {
+function DeviceBadge({ isOnline }) {
+  return (
+    <span
+      className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium"
+      style={{
+        background: isOnline ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+        color: isOnline ? '#22c55e' : '#ef4444',
+      }}
+    >
+      <Cpu className="w-3 h-3" />
+      Perangkat: {isOnline ? 'Online' : 'Offline'}
+    </span>
+  );
+}
+
+function ConnectionBadge({ status }) {
   const configs = {
-    connected: { color: '#22c55e', bg: 'rgba(34,197,94,0.1)', label: 'Realtime Terhubung', icon: Wifi },
+    connected: { color: '#22c55e', bg: 'rgba(34,197,94,0.1)', label: 'Terhubung', icon: Wifi },
     connecting: { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', label: 'Menghubungkan...', icon: Wifi },
-    error: { color: '#ef4444', bg: 'rgba(239,68,68,0.1)', label: 'Realtime Terputus', icon: WifiOff },
+    error: { color: '#ef4444', bg: 'rgba(239,68,68,0.1)', label: 'Terputus', icon: WifiOff },
   };
   const cfg = configs[status] || configs.connecting;
   const Icon = cfg.icon;
@@ -31,7 +46,7 @@ function MqttStatusBadge({ status }) {
       style={{ background: cfg.bg, color: cfg.color }}
     >
       <Icon className="w-3 h-3" />
-      {cfg.label}
+      Status Koneksi: {cfg.label}
     </span>
   );
 }
@@ -48,6 +63,13 @@ export default function Dashboard() {
 
   const waterStatus = getWaterStatus();
   const envStatus = getEnvStatus();
+
+  // Cek apakah perangkat (Arduino) online — ada data terbaru dalam 30 detik terakhir
+  const deviceOnline = (() => {
+    if (!latest?.timestamp) return false;
+    const lastTime = new Date(latest.timestamp).getTime();
+    return (now.getTime() - lastTime) < 30000; // 30 detik
+  })();
 
   // Hitung statistik dari chartData
   const waterTemps = chartData.map(d => d.waterTemp).filter(Boolean);
@@ -83,20 +105,15 @@ export default function Dashboard() {
     <div className="space-y-6">
       {/* ── Top Bar ── */}
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-3">
-          <Activity className="w-5 h-5" style={{ color: 'var(--accent)' }} />
-          <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
-            Data real-time dari Arduino via Supabase
-          </p>
-        </div>
         <div className="flex items-center gap-2">
-          <MqttStatusBadge status={mqttStatus} />
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: 'var(--bg-secondary)' }}>
-            <Clock className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)' }} />
-            <span className="text-xs font-mono" style={{ color: 'var(--text-secondary)' }}>
-              {now.toLocaleTimeString('id-ID')}
-            </span>
-          </div>
+          <DeviceBadge isOnline={deviceOnline} />
+          <ConnectionBadge status={mqttStatus} />
+        </div>
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: 'var(--bg-secondary)' }}>
+          <Clock className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)' }} />
+          <span className="text-xs font-mono" style={{ color: 'var(--text-secondary)' }}>
+            {now.toLocaleTimeString('id-ID')}
+          </span>
         </div>
       </div>
 

@@ -51,7 +51,7 @@ export default function Settings() {
   const { threshold, updateThreshold } = useSensor();
   const [form, setForm] = useState({
     waterMin: threshold.waterMin ?? threshold.min ?? 22,
-    waterMax: threshold.waterMax ?? threshold.max ?? 28,
+    waterMax: threshold.waterMax ?? threshold.max ?? 29,
     envMin: threshold.envMin ?? 25,
     envMax: threshold.envMax ?? 35,
   });
@@ -83,11 +83,11 @@ export default function Settings() {
   const handleReset = () => {
     const defaults = {
       waterMin: 22,
-      waterMax: 28,
+      waterMax: 29,
       envMin: 25,
       envMax: 35,
       min: 22,
-      max: 28
+      max: 29
     };
     setForm({
       waterMin: defaults.waterMin,

@@ -63,17 +63,7 @@ export default function Sidebar() {
         </AnimatePresence>
       </div>
 
-      {/* ── Status Online ── */}
-      {!collapsed && (
-        <div className="mx-3 mt-3 px-3 py-2 rounded-lg flex items-center gap-2" style={{ background: 'var(--accent-light)' }}>
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: 'var(--accent)' }} />
-            <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: 'var(--accent)' }} />
-          </span>
-          <span className="text-xs font-medium" style={{ color: 'var(--accent)' }}>Sistem Online</span>
-          <Wifi className="w-3 h-3 ml-auto" style={{ color: 'var(--accent)' }} />
-        </div>
-      )}
+
 
       {/* ── Nav Menu ── */}
       <nav className="flex-1 px-2 py-4 space-y-1">
