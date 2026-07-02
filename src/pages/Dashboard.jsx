@@ -87,13 +87,41 @@ export default function Dashboard() {
     <div className="space-y-6">
       {/* ── Top Bar ── */}
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
           <ConnectionBadge status={mqttStatus} />
+          {latest?.timestamp && (
+            <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+              Data terakhir: {(() => {
+                const ts = new Date(latest.timestamp);
+                return ts.toLocaleDateString('id-ID', {
+                  weekday: 'long',
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit',
+                  timeZone: 'Asia/Jakarta'
+                }).replace(/\./g, ':') + ' WIB';
+              })()}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: 'var(--bg-secondary)' }}>
           <Clock className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)' }} />
           <span className="text-xs font-mono" style={{ color: 'var(--text-secondary)' }}>
-            {now.toLocaleTimeString('id-ID')}
+            {now.toLocaleDateString('id-ID', {
+              weekday: 'long',
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+              timeZone: 'Asia/Jakarta'
+            })} - {now.toLocaleTimeString('id-ID', {
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+              timeZone: 'Asia/Jakarta'
+            }).replace(/\./g, ':')} WIB
           </span>
         </div>
       </div>
