@@ -37,7 +37,7 @@ export default function TemperatureChart({ data = [], threshold, showEnv = true,
   const envColor   = isDark ? '#60a5fa' : '#3b82f6';
 
   // Tentukan threshold berdasarkan tipe
-  const hasThreshold = !!threshold;
+  const hasThreshold = !!threshold && !showEnv;
   const tMin = type === 'water' 
     ? (threshold?.waterMin ?? threshold?.min ?? 22) 
     : (threshold?.envMin ?? 25);
@@ -49,6 +49,8 @@ export default function TemperatureChart({ data = [], threshold, showEnv = true,
   const tLabelMax = type === 'water' ? 'Max Air' : 'Max Greenhouse';
   const strokeColorMin = type === 'water' ? '#22c55e' : '#3b82f6';
   const strokeColorMax = '#ef4444';
+
+  const lineColor = type === 'env' ? envColor : waterColor;
 
   // Tentukan domain Y
   const allValues = data.flatMap(d => [d.waterTemp, showEnv ? d.envTemp : null].filter(Boolean));
@@ -103,11 +105,11 @@ export default function TemperatureChart({ data = [], threshold, showEnv = true,
         <Line
           type="monotone"
           dataKey="waterTemp"
-          name="Suhu Air"
-          stroke={waterColor}
+          name={type === 'env' ? "Suhu Lingkungan" : "Suhu Air"}
+          stroke={lineColor}
           strokeWidth={2.5}
           dot={false}
-          activeDot={{ r: 5, fill: waterColor, strokeWidth: 0 }}
+          activeDot={{ r: 5, fill: lineColor, strokeWidth: 0 }}
         />
 
         {/* Suhu Lingkungan */}
@@ -119,7 +121,6 @@ export default function TemperatureChart({ data = [], threshold, showEnv = true,
             stroke={envColor}
             strokeWidth={2.5}
             dot={false}
-            strokeDasharray="5 3"
             activeDot={{ r: 5, fill: envColor, strokeWidth: 0 }}
           />
         )}
