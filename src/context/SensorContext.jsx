@@ -44,6 +44,7 @@ export function SensorProvider({ children }) {
     // Muat 50 data terakhir dari database sebagai data awal
     fetchRecent(50)
       .then((readings) => {
+        if (readings && readings.length > 0) {
           const mapped = readings.map((r) => {
             const timeStr = new Date(r.timestamp).toLocaleTimeString('id-ID', {
               hour: '2-digit', minute: '2-digit', second: '2-digit',
