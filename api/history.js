@@ -15,13 +15,14 @@ module.exports = async function handler(req, res) {
     const startDate = `${start} 00:00:00`;
     const endDate = end ? `${end} 23:59:59` : `${start} 23:59:59`;
 
-    // Fetch data
+    // Fetch data (ditambah limit 100000 agar tidak terpotong default 1000 baris dari Supabase)
     const { data: history, error: historyError } = await supabase
       .from('sensor_readings')
       .select('*')
       .gte('timestamp', startDate)
       .lte('timestamp', endDate)
-      .order('timestamp', { ascending: true });
+      .order('timestamp', { ascending: true })
+      .limit(100000);
 
     if (historyError) throw new Error(historyError.message);
 
