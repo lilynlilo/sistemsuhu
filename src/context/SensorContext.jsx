@@ -44,14 +44,17 @@ export function SensorProvider({ children }) {
     // Muat 50 data terakhir dari database sebagai data awal
     fetchRecent(50)
       .then((readings) => {
-        if (readings && readings.length > 0) {
-          const mapped = readings.map((r) => ({
-            time: new Date(r.timestamp).toLocaleTimeString('id-ID', {
+          const mapped = readings.map((r) => {
+            const timeStr = new Date(r.timestamp).toLocaleTimeString('id-ID', {
               hour: '2-digit', minute: '2-digit', second: '2-digit',
-            }),
-            waterTemp: r.water_temp,
-            envTemp:   r.env_temp,
-          }));
+              timeZone: 'Asia/Jakarta'
+            }).replace(/\./g, ':');
+            return {
+              time: timeStr,
+              waterTemp: r.water_temp,
+              envTemp:   r.env_temp,
+            };
+          });
           setChartData(mapped);
 
           const last = readings[readings.length - 1];
@@ -90,12 +93,14 @@ export function SensorProvider({ children }) {
           setRealtimeStatus('connected');
 
           setChartData((prev) => {
+            const timeStr = new Date(r.timestamp).toLocaleTimeString('id-ID', {
+              hour: '2-digit', minute: '2-digit', second: '2-digit',
+              timeZone: 'Asia/Jakarta'
+            }).replace(/\./g, ':');
             const next = [
               ...prev,
               {
-                time: new Date(r.timestamp).toLocaleTimeString('id-ID', {
-                  hour: '2-digit', minute: '2-digit', second: '2-digit',
-                }),
+                time: timeStr,
                 waterTemp: reading.waterTemp,
                 envTemp:   reading.envTemp,
               },

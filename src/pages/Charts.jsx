@@ -36,12 +36,14 @@ export default function Charts() {
       .then((result) => {
         const mapped = (result.data || []).map((row) => {
           const ts = new Date(row.timestamp);
+          const timeStr = ts.toLocaleTimeString('id-ID', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            timeZone: 'Asia/Jakarta'
+          }).replace(/\./g, ':');
           return {
-            time: ts.toLocaleTimeString('id-ID', {
-              hour: '2-digit',
-              minute: '2-digit',
-              second: '2-digit',
-            }),
+            time: timeStr,
             waterTemp: row.water_temp,
             envTemp: row.env_temp,
           };

@@ -19,19 +19,27 @@ export default function History() {
       .then((result) => {
         const mapped = (result.data || []).map((row, index) => {
           const ts = new Date(row.timestamp);
-          // Konversi ke WIB (UTC+7)
-          const wib = new Date(ts.getTime() + (7 * 60 * 60 * 1000 - ts.getTimezoneOffset() * 60 * 1000));
-          const dayStr = String(wib.getDate()).padStart(2, '0');
-          const monStr = String(wib.getMonth() + 1).padStart(2, '0');
-          const yrStr = wib.getFullYear();
-          const hrStr = String(wib.getHours()).padStart(2, '0');
-          const minStr = String(wib.getMinutes()).padStart(2, '0');
-          const secStr = String(wib.getSeconds()).padStart(2, '0');
+          const formatter = new Intl.DateTimeFormat('id-ID', {
+            timeZone: 'Asia/Jakarta',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+          });
+          const parts = formatter.formatToParts(ts);
+          const partObj = {};
+          parts.forEach(p => partObj[p.type] = p.value);
+
+          const dateStr = `${partObj.day}/${partObj.month}/${partObj.year}`;
+          const timeStr = `${partObj.hour}:${partObj.minute}:${partObj.second}`;
 
           return {
             no: index + 1,
-            date: `${dayStr}/${monStr}/${yrStr}`,
-            time: `${hrStr}:${minStr}:${secStr}`,
+            date: dateStr,
+            time: timeStr,
             waterTemp: row.water_temp,
             envTemp: row.env_temp,
             peltierOn: !!row.peltier_on,
