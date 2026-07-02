@@ -32,7 +32,7 @@ export default function Charts() {
     const start = formatDate(startDate);
     const end = endDate ? formatDate(endDate) : start;
 
-    fetchHistory(start, end)
+    fetchHistory({ start, end, limit: 200, interval: 30 })
       .then((result) => {
         const mapped = (result.data || []).map((row) => {
           const ts = new Date(row.timestamp);

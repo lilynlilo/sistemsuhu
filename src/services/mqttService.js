@@ -13,9 +13,10 @@ export async function fetchRecent(count = 50) {
   return res.json();
 }
 
-export async function fetchHistory(startDate, endDate) {
-  let url = `${API_BASE}/history?start=${startDate}`;
-  if (endDate) url += `&end=${endDate}`;
+export async function fetchHistory({ start, end, limit = 100, interval = 30 } = {}) {
+  let url = `${API_BASE}/history?limit=${limit}&interval=${interval}`;
+  if (start) url += `&start=${start}`;
+  if (end) url += `&end=${end}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();

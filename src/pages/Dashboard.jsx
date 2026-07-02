@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Clock, RefreshCw, Activity, Power, Wifi, WifiOff, Cpu } from 'lucide-react';
+import { Clock, RefreshCw, Activity, Power, Wifi, WifiOff } from 'lucide-react';
 import { useSensor } from '../context/SensorContext';
 import SensorCard from '../components/ui/SensorCard';
 import PeltierStatus from '../components/ui/PeltierStatus';

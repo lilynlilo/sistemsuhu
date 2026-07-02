@@ -15,7 +15,8 @@ module.exports = async function handler(req, res) {
       .from('sensor_readings')
       .select('water_temp, env_temp, peltier_on')
       .gte('timestamp', `${startDate} 00:00:00`)
-      .lte('timestamp', `${endDate} 23:59:59`);
+      .lte('timestamp', `${endDate} 23:59:59`)
+      .limit(5000);
 
     if (error) throw new Error(error.message);
 
